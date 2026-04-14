@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro de Incidencias</title>
+  <style>
+    body { font-family: Arial; margin: 20px; background: #f4f4f4; }
+    h2 { margin-top: 30px; }
+    form, .search, .results { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    input, select, textarea, button { width: 100%; margin: 5px 0 10px; padding: 8px; }
+    button { background: #007BFF; color: white; border: none; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .hidden { display: none; }
+    .card { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+<h1>Registro de Incidencias de Esterilización</h1>
+
+<form id="registroForm">
+  <label>Número de material</label>
+  <input type="text" id="numero" required>
+
+  <label>Nombre del material</label>
+  <input type="text" id="nombre" required>
+
+  <label>Tipo de registro</label>
+  <select id="tipo" required>
+    <option value="">Seleccione</option>
+    <option value="incidencia">Incidencia</option>
+    <option value="modificacion">Modificación</option>
+  </select>
+
+  <div id="descripcionContainer" class="hidden">
+    <label>Descripción</label>
+    <textarea id="descripcion"></textarea>
+  </div>
+
+  <div id="ordenContainer" class="hidden">
+    <label>Quién autoriza la modificación</label>
+    <input type="text" id="orden">
+  </div>
+
+  <button type="submit">Guardar</button>
+</form>
+
+<div class="search">
+  <h2>Consulta por número de material</h2>
+  <input type="text" id="buscarNumero" placeholder="Introduce número de material">
+  <button onclick="buscar()">Buscar</button>
+</div>
+
+<div class="results">
+  <h2>Resultados</h2>
+  <div id="incidencias">
+    <h3>Incidencias</h3>
+  </div>
+  <div id="modificaciones">
+    <h3>Modificaciones</h3>
+  </div>
+</div>
+
+<script>
+const tipoSelect = document.getElementById('tipo');
+const descripcionContainer = document.getElementById('descripcionContainer');
+const ordenContainer = document.getElementById('ordenContainer');
+
+// Mostrar campos según tipo
+tipoSelect.addEventListener('change', () => {
+  const tipo = tipoSelect.value;
+  descripcionContainer.classList.remove('hidden');
+
+  if (tipo === 'modificacion') {
+    ordenContainer.classList.remove('hidden');
+  } else {
+    ordenContainer.classList.add('hidden');
+  }
+});
+
+// Guardar datos
+document.getElementById('registroForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const numero = document.getElementById('numero').value;
+  const nombre = document.getElementById('nombre').value;
+  const tipo = document.getElementById('tipo').value;
+  const descripcion = document.getElementById('descripcion').value;
+  const orden = document.getElementById('orden').value;
+
+  if (tipo === 'modificacion' && !orden) {
+    alert('Debe indicar quién autoriza la modificación');
+    return;
+  }
+
+  const registro = {
+    numero,
+    nombre,
+    tipo,
+    descripcion,
+    orden: tipo === 'modificacion' ? orden : null,
+    fecha: new Date().toLocaleString()
+  };
+
+  let datos = JSON.parse(localStorage.getItem('registros')) || [];
+  datos.push(registro);
+  localStorage.setItem('registros', JSON.stringify(datos));
+
+  alert('Registro guardado');
+  this.reset();
+  descripcionContainer.classList.add('hidden');
+  ordenContainer.classList.add('hidden');
+});
+
+// Buscar registros
+function buscar() {
+  const numeroBuscado = document.getElementById('buscarNumero').value;
+  const datos = JSON.parse(localStorage.getItem('registros')) || [];
+
+  const incidenciasDiv = document.getElementById('incidencias');
+  const modificacionesDiv = document.getElementById('modificaciones');
+
+  incidenciasDiv.innerHTML = '<h3>Incidencias</h3>';
+  modificacionesDiv.innerHTML = '<h3>Modificaciones</h3>';
+
+  const filtrados = datos.filter(d => d.numero === numeroBuscado);
+
+  filtrados.forEach(d => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    card.innerHTML = `
+      <strong>${d.nombre}</strong><br>
+      Fecha: ${d.fecha}<br>
+      Descripción: ${d.descripcion}<br>
+      ${d.tipo === 'modificacion' ? 'Orden: ' + d.orden : ''}
+    `;
+
+    if (d.tipo === 'incidencia') {
+      incidenciasDiv.appendChild(card);
+    } else {
+      modificacionesDiv.appendChild(card);
+    }
+  });
+}
+</script>
+
+</body>
+</html>
