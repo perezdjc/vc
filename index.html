@@ -13,6 +13,8 @@
     button:hover { background: #0056b3; }
     .hidden { display: none; }
     .card { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+    .delete-btn { background: red; margin-top: 10px; }
+    .delete-btn:hover { background: darkred; }
   </style>
 
   <!-- Firebase -->
@@ -67,7 +69,7 @@
 </div>
 
 <script>
-  // 🔥 PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
+  // 🔥 CONFIGURACIÓN FIREBASE
   const firebaseConfig = {
     apiKey: "XXXX",
     authDomain: "XXXX",
@@ -111,12 +113,22 @@
       return;
     }
 
-    await db.collection("registros").add(registro);
+    try {
+      await db.collection("registros").add(registro);
 
-    alert("Guardado en la nube ✅");
-    this.reset();
-    descripcionContainer.classList.add('hidden');
-    ordenContainer.classList.add('hidden');
+      alert("✅ Incidencia guardada correctamente");
+
+      // LIMPIAR FORMULARIO
+      document.getElementById('registroForm').reset();
+
+      // OCULTAR CAMPOS
+      descripcionContainer.classList.add('hidden');
+      ordenContainer.classList.add('hidden');
+
+    } catch (error) {
+      alert("❌ Error al guardar");
+      console.error(error);
+    }
   });
 
   // BUSCAR
@@ -143,7 +155,8 @@
           Usuario: ${d.usuario}<br>
           Fecha: ${d.fecha}<br>
           Descripción: ${d.descripcion}<br>
-          ${d.tipo === 'modificacion' ? 'Orden: ' + d.orden : ''}
+          ${d.tipo === 'modificacion' ? 'Orden: ' + d.orden + '<br>' : ''}
+          <button class="delete-btn" onclick="eliminar('${doc.id}')">🗑️ Borrar</button>
         `;
 
         if (d.tipo === 'incidencia') {
@@ -153,6 +166,23 @@
         }
       }
     });
+  }
+
+  // ELIMINAR
+  async function eliminar(id) {
+    const confirmacion = confirm("¿Seguro que quieres borrar este registro?");
+
+    if (!confirmacion) return;
+
+    try {
+      await db.collection("registros").doc(id).delete();
+      alert("🗑️ Registro eliminado correctamente");
+
+      buscar(); // refrescar resultados
+    } catch (error) {
+      alert("❌ Error al eliminar");
+      console.error(error);
+    }
   }
 </script>
 
